@@ -372,7 +372,8 @@ static int parse_skin(Json *skin, vector<string> slots)
 				if (typeString == "region" || typeString == "mesh" || typeString == "linkedmesh")
 				{
 					const char *attachmentName = Json_getString(attachment, "name", attachment->name);
-					if (all_atlas.find(string(attachmentName)) != all_atlas.end())
+					const char* attachmentPath = Json_getString(attachment, "path", attachmentName);
+					if (all_atlas.find(string(attachmentPath)) != all_atlas.end())
 						validAttachment.push_back(attachment);
 				}
 				else
@@ -422,10 +423,11 @@ static int parse_skin(Json *skin, vector<string> slots)
 			}
 			else if (spAttachmentType == 1) // SP_ATTACHMENT_BOUNDING_BOX
 			{
-				int vertexCount = Json_getInt(attachment, "vertexCount", 0) << 1;
+				int vertexCount = Json_getInt(attachment, "vertexCount", 0);
 				push_varint(vertexCount, 1);
 				Json *vertices = Json_getItem(attachment, "vertices");
-				push_vertices(vertices, vertexCount);
+				push_vertices(vertices, vertexCount << 1);
+				
 			}
 			else if (spAttachmentType == 2) // SP_ATTACHMENT_MESH
 			{
@@ -471,7 +473,11 @@ static int parse_skin(Json *skin, vector<string> slots)
 					push_string(skin);
 				else
 					push_varint(0, 1);
-				push_string(attachment->valueString);
+										 
+
+				// parent
+				//push_string(attachment->valueString);
+				push_string(Json_getString(attachment, "parent", 0));
 
 				int deform = Json_getInt(attachment, "deform", 1);
 				push_boolen(deform);
@@ -1037,7 +1043,7 @@ int convert_json_to_binary(const char *json, size_t len, unsigned char *outBuff,
 		push_varint(boneIndex, 1);
 
 		push_float(Json_getFloat(ikMap, "mix", 1));
-		push_float(Json_getInt(ikMap, "bendPositive", 1) ? 1 : -1);
+		push_byte(Json_getInt(ikMap, "bendPositive", 1) ? 1 : -1);
 	}
 
 		
@@ -1211,7 +1217,7 @@ int convert_json_to_binary(const char *json, size_t len, unsigned char *outBuff,
 		ed.name = eventMap->name;
 		ed.intValue = Json_getInt(eventMap, "int", 0);
 		ed.floatValue = Json_getFloat(eventMap, "float", 0);
-		ed.stringValue = Json_getString(eventMap, "string", 0);
+		ed.stringValue = Json_getString(eventMap, "string", "");
 		vcEvents.push_back(ed);
 
 		push_string(ed.name.c_str());
